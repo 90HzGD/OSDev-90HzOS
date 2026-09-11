@@ -16,6 +16,8 @@ This project **IS NOT PROFESSIONAL**
             - [Driver Features](#kb-driver)
             - [Keyboard API](#keyboard-driver-api)
         - [Memory Features](#memory-features)
+        - [PCI Features](#pci-api)
+        - [ATA Features](#ata-api)
         - [Other](#other-functions)
     - [What does the compiled OS?](#what-does-the-compiled-os)
     - [Compiling Tutorial (May need adaptations in Makefile)](#how-to-compile)
@@ -100,6 +102,9 @@ This project **IS NOT PROFESSIONAL**
                 - **transkey():**          converts a raw scancode into a keyboard event structure containing the key state, modifier states, character representation, and release state.
                 - **Shitkey():**           Used by transkey, returns the input as shifted on the keyboard _(examples: q -> Q; 1 -> !...)_ _(Shift ON/OFF formula: Shift Pressed XOR CapsLock)_
                 - **extended_char():**     Also used by transkey, returns input if the key toggled is extended
+                - **cin()**                Outputs a string of what the user typed before hitting the **ENTER key** _(stops everything else execution while being called)_
+                - **get_arrow_keys():**    Outputs if and which arrow key is being pressed or released
+
   - ## **MEMORY FEATURES**
       - **Basic Memory allocation functions():**
           - **init_heap():**               Initializes the heap when booting
@@ -114,6 +119,19 @@ This project **IS NOT PROFESSIONAL**
           - **free_str():**                Free all strings in a _char**_ array in the heap.
     - ## **OTHER FUNCTIONS**:
         - **init_RAM():** describes in a struct, where the OS can write to RAM in several segments, associated with the length for each segment _(kernel.c func btw)_
+- ## **PCI FEATURES**
+    - **PCI API:**
+        - **read_pci():**                  Reads at a specific PCI address _(given args: BUS; DEVICE; FUNCTION; REGOFFSET)_
+        - **write_pci():**                 Similar behavior as _read_pci()_, writes to a PCI address
+        - **GetDevInfo():**                Outputs the _VENDOR_ID; DEVICE_ID; INTERFACE; INTERRUPT_TYPE; REVISION; SUB_CLASS; CLASS_ of a PCI Device in a struct 
+        - **CheckMultiFun():**             As it name suggests, outputs if a PCI DEVICE is multi-function or not
+- ## **ATA API:**
+    - **ATAControllerExists():**           Outputs if >= 1 ATA/IDE Controller exists
+    - **GetATAControllerCount():**         Outputs ATA/IDE Controller count
+    - **GetATA_PCI_Controller():**         Fills a struct with  ATA PCI Controllers Location on PCI
+    - **Get_ATA_BARs():**                  Fills a struct with PCI Controller ATA BARs (Native mode supported) for a specific controller
+    - **SelectDrive():**                   Selects a drive with the ~400ns of delay
+    - **IdentifyATADrive():**              Sends INDENTIFY Command _(0xEC)_ to a specific drive and outputs the 256 words sent by using _ATA PIO Mode (contains SERIAL NBR; MODEL etc...)_
 
 - ## **BOOT PROCESS**:
     - 1. The bootloader is loaded at `0x7C00`.
