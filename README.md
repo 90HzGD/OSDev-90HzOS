@@ -19,7 +19,7 @@ This project **IS NOT PROFESSIONAL**
         - [PCI Features](#pci-api)
         - [ATA Features](#ata-api)
         - [Other](#other-functions)
-    - [What does the compiled OS?](#what-does-the-compiled-os)
+    - [Boot Process](#boot-process)
     - [Compiling Tutorial (May need adaptations in Makefile)](#how-to-compile)
     - [How to run on QEMU](#how-to-run-on-qemu)
     - [How to run on VirtualBox](#how-to-run-on-virtualbox)
