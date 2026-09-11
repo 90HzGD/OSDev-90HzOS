@@ -117,21 +117,24 @@ This project **IS NOT PROFESSIONAL**
           - **init_bloc():**               Overrides the content of a given block data pointer, full of zeros
           - **alloc_str():**               Allocates strings in **heap**: input: char* str; output: 0 if error; allocation adr if not.
           - **free_str():**                Free all strings in a _char**_ array in the heap.
-    - ## **OTHER FUNCTIONS**:
-        - **init_RAM():** describes in a struct, where the OS can write to RAM in several segments, associated with the length for each segment _(kernel.c func btw)_
+
 - ## **PCI FEATURES**
-    - **PCI API:**
+    - **PCI API**
         - **read_pci():**                  Reads at a specific PCI address _(given args: BUS; DEVICE; FUNCTION; REGOFFSET)_
         - **write_pci():**                 Similar behavior as _read_pci()_, writes to a PCI address
         - **GetDevInfo():**                Outputs the _VENDOR_ID; DEVICE_ID; INTERFACE; INTERRUPT_TYPE; REVISION; SUB_CLASS; CLASS_ of a PCI Device in a struct 
         - **CheckMultiFun():**             As it name suggests, outputs if a PCI DEVICE is multi-function or not
-- ## **ATA API:**
+
+- ## **ATA API**
     - **ATAControllerExists():**           Outputs if >= 1 ATA/IDE Controller exists
     - **GetATAControllerCount():**         Outputs ATA/IDE Controller count
     - **GetATA_PCI_Controller():**         Fills a struct with  ATA PCI Controllers Location on PCI
     - **Get_ATA_BARs():**                  Fills a struct with PCI Controller ATA BARs (Native mode supported) for a specific controller
     - **SelectDrive():**                   Selects a drive with the ~400ns of delay
     - **IdentifyATADrive():**              Sends INDENTIFY Command _(0xEC)_ to a specific drive and outputs the 256 words sent by using _ATA PIO Mode (contains SERIAL NBR; MODEL etc...)_
+
+    - ## **OTHER FUNCTIONS**:
+        - **init_RAM():** describes in a struct, where the OS can write to RAM in several segments, associated with the length for each segment _(kernel.c func btw)_
 
 - ## **BOOT PROCESS**:
     - 1. The bootloader is loaded at `0x7C00`.
