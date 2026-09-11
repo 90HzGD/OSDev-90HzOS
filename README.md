@@ -5,7 +5,7 @@ It even runs on REAL COMPUTER
 This project **IS NOT PROFESSIONAL**
 
 ## GO TO
-**Click Where you want to go!**
+**Click Where you wanna go**
 - [Here](#go-to)
     - [Project Progression](#project-progression)
     - [OS Screenshots](#os-screenshots)
