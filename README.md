@@ -118,12 +118,11 @@ This project **IS NOT PROFESSIONAL**
           - **alloc_str():**               Allocates strings in **heap**: input: char* str; output: 0 if error; allocation adr if not.
           - **free_str():**                Free all strings in a _char**_ array in the heap.
 
-- ## **PCI FEATURES**
-    - **PCI API**
-        - **read_pci():**                  Reads at a specific PCI address _(given args: BUS; DEVICE; FUNCTION; REGOFFSET)_
-        - **write_pci():**                 Similar behavior as _read_pci()_, writes to a PCI address
-        - **GetDevInfo():**                Outputs the _VENDOR_ID; DEVICE_ID; INTERFACE; INTERRUPT_TYPE; REVISION; SUB_CLASS; CLASS_ of a PCI Device in a struct 
-        - **CheckMultiFun():**             As it name suggests, outputs if a PCI DEVICE is multi-function or not
+- ## **PCI API**
+    - **read_pci():**                  Reads at a specific PCI address _(given args: BUS; DEVICE; FUNCTION; REGOFFSET)_
+    - **write_pci():**                 Similar behavior as _read_pci()_, writes to a PCI address
+    - **GetDevInfo():**                Outputs the _VENDOR_ID; DEVICE_ID; INTERFACE; INTERRUPT_TYPE; REVISION; SUB_CLASS; CLASS_ of a PCI Device in a struct 
+    - **CheckMultiFun():**             As it name suggests, outputs if a PCI DEVICE is multi-function or not
 
 - ## **ATA API**
     - **ATAControllerExists():**           Outputs if >= 1 ATA/IDE Controller exists
