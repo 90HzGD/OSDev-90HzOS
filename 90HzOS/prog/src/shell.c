@@ -21,7 +21,7 @@ void next_entry(int clear){
     }
     unsigned char ret = 0;
     while (!ret){
-        ret = prompt(&position);
+        ret = prompt();
     }
     return;
 }
@@ -76,80 +76,29 @@ void init_builtin_commands(){
 char* command_args[256];
 struct command Command;
 
-unsigned char prompt(volatile unsigned int *position){
-    printf("\n[90HzOS@krnl] >\033\xF0%c\033\x0F", 0);
-    --*(position);
-    struct output trans_key;
-    unsigned char key=0;
-    unsigned Oldkey = key;
+unsigned char prompt(){
+    printf("\n[90HzOS@krnl] >");
     char full_command[4096];
-    full_command[0] = 0;
-    unsigned int command_pos = 0;
-    unsigned int prompt_pos = *(position);
-    while (1){
-        Oldkey = key;
-        key = get_key();
-        if (key == Oldkey || key == 0){
-            continue;
-        }
-        trans_key = transkey(key);
-        if (trans_key.char1 == '\r' || trans_key.char1 == '\t'){
-            if (trans_key.char1 == '\r' && !trans_key.released){
-                while (!trans_key.released){
-                    key = get_key();
-                    trans_key = transkey(key);
-                }
-                --*(position);
-                printf("\033\x00  \033\x0F");
-                Command = parse(full_command);
-                if (Command.rcode != 0){
-                    com_err(Command);
-                }
-                else if (Command.com_adr != 0x00){
-                    exec(Command.com_adr, Command.arguments);
-                }
-                if ((!compare_string(Command.command, "clear") || Command.rcode != 0) && (Command.com_adr != 0 || Command.rcode != 0)){
-                    if (!Command.rcode){
-                        printf("\n");
-                    }
-                    printf("Executed with rcode: \033\x03%u\033\x0F", Command.rcode);
-                }
-                return 0;
-            }
-            else {
-                continue;
-            }
-        }
-        if (trans_key.Ctrlpressed && trans_key.char1 == 'q'){
-            return 1;
-        }
-        if (trans_key.char1 == '\x08' && !trans_key.released){
-            unsigned int len = length(full_command);
-            if (len == 0){
-                continue;
-            }
-            command_pos -= 1;
-            full_command[len-1] = '\0';
-            --*position;
-            print_char(0, 0x00, position);
-            *(position) = prompt_pos;
-            printf("%s\033\xF0%c\033\x0F", full_command, 0);
-            continue;
-        }
-        if (!trans_key.released && trans_key.char1 != 0 && !trans_key.extended){
-            *(full_command + command_pos) = trans_key.char1;
-            command_pos += 1;
-            *(position) = prompt_pos;
-            *(full_command + command_pos) = 0;
-            printf("%s\033\xF0%c\033\x0F", full_command, 0);
-            continue;
-        }
+    cin(full_command);
+    Command = parse(full_command);
+    if (Command.rcode != 0){
+        com_err(Command);
     }
+    else if (Command.com_adr != 0x00){
+        exec(Command.com_adr, Command.arguments);
+    }
+    if ((!compare_string(Command.command, "clear") || Command.rcode != 0) && (Command.com_adr != 0 || Command.rcode != 0)){
+        if (!Command.rcode){
+            printf("\n");
+        }
+        printf("Executed with rcode: \033\x03%u\033\x0F", Command.rcode);
+    }
+    return 0;
 }
 
 struct command parse(char* full_command){
     struct command Com;
-    replace_string(Com.full_command, full_command);
+    strcpy(full_command, Com.full_command);
     Com.rcode = OK;
     Com.com_adr = 0x00;
     *(Com.arguments) = 0;
@@ -170,7 +119,7 @@ struct command parse(char* full_command){
         *(command + com_idx) = 0;
         ++com_idx;
         unsigned int bypass_arg_parse = (com_idx >= length(full_command));
-        replace_string(Com.command, command);
+        strcpy(command, Com.command);
         *argument = 0;
 
         if (!bypass_arg_parse){
@@ -343,12 +292,18 @@ char** lspci(){
     *(ret+1) = (char*)0;
     struct PCIDev_Descriptor Device;
     printf("\nEnumerating PCI devices:\n");
+    char multifunction = 0;
     for (unsigned short i = 0; i != BUS_COUNT; ++i){
         for (unsigned int j = 0; j != DEV_COUNT; ++j){
+            multifunction = CheckMultifun(i, j);
             for (u16 k = 0; k != 8; ++k){
             
                 Device = GetDevInfo((u8)i, (u8)j, (u8)k);
-                if (Device.VENDOR_ID == 0){
+                if (Device.VENDOR_ID == 0 || Device.VENDOR_ID == 0xFF){
+
+                    if (!multifunction){
+                        break;
+                    }
                     continue;
                 }
                 printf("Device: Bus#%u Device:#%u Function: %u; ", (u32)i, j, (u32)k);
@@ -364,9 +319,9 @@ char** lspci(){
                     printf("VENDOR: %s; ", *(Vendors.Vendors_str + knownVendor));
                 }
                 else {
-                    printf("VENDORID:%h; ", Device.VENDOR_ID);
+                    printf("VENDORID:%x; ", Device.VENDOR_ID);
                 }
-                printf("DEVICEID:%h\n", Device.DEVICE_ID);
+                printf("DEVICEID:%x\n", Device.DEVICE_ID);
                 if (Device.CLASS == 1){
                     printf("\t\xC0Storage Device: ");
                     switch(Device.SUBCLASS){
@@ -386,6 +341,9 @@ char** lspci(){
                             printf("Unknown");
                     }
                     printf(" Controller\n");
+                }
+                if (!multifunction){
+                    break;
                 }
             }
         }

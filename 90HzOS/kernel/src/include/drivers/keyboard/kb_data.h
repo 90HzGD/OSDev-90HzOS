@@ -16,5 +16,10 @@
         unsigned char released;
         unsigned char extended;
     };
+
+    struct arrow_info {
+        unsigned char key;
+        unsigned char released;
+    };
     
 #endif

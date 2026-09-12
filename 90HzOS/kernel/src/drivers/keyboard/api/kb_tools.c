@@ -1,4 +1,7 @@
+#include "../../../include/string.h"
 #include "../../../include/drivers/keyboard/kb_tools.h"
+#include "../../../include/types.h"
+#include "../../../include/vga/stdio.h"
 
     const char scan_codes_arr[256] = {
         0,
@@ -174,26 +177,10 @@
         0,
     };
 
-    char extended_keys_arr[256];
     char shifted_keys_arr[256];
     char letters[27] = "qwertyuiopasdfghjklzxcvbnm";
 
     void init_arrays(void){
-        // extended
-
-        *(extended_keys_arr + 0x35) = '/';
-        *(extended_keys_arr + 0xB5) = '/';
-        *(extended_keys_arr + 0x48) = 'U';
-        *(extended_keys_arr + 0xC8) = 'U';
-        *(extended_keys_arr + 0x4B) = 'L';
-        *(extended_keys_arr + 0xCB) = 'L';
-        *(extended_keys_arr + 0x4D) = 'R';
-        *(extended_keys_arr + 0xCD) = 'R';
-        *(extended_keys_arr + 0x50) = 'D';
-        *(extended_keys_arr + 0xD0) = 'D';
-        *(extended_keys_arr + 0x1C) = '\r';
-        *(extended_keys_arr + 0x9C) = '\r';
-
         // Shifted
 
         *(shifted_keys_arr + '1') = '!';
@@ -216,6 +203,7 @@
         *(shifted_keys_arr + ',') = '<';
         *(shifted_keys_arr + '.') = '>';
         *(shifted_keys_arr + '/') = '?';
+        *(shifted_keys_arr + ' ') = ' ';
     } 
 
     unsigned char get_key(void){
@@ -355,7 +343,30 @@
         struct output output;
         output.extended = 1;
         output.released = released;
-        output.char1 = extended_keys_arr[scan_code];
+        switch (scan_code){
+            case 0x35:case 0xB5:
+                output.char1 = '/';
+                break;
+            case 0x48:case 0xC8:
+                output.char1 = 'U';
+                break;
+            case 0x4B:case 0xCB:
+                output.char1 = 'L';
+                break;
+            case 0x4D:case 0xCD:
+                output.char1 = 'R';
+                break;
+            case 0x50:case 0xD0:
+                output.char1 = 'D';
+                break;
+            case 0x1C:case 0x9C:
+                output.char1 = '\r';
+                break;
+            default:
+                output.char1 = 0;
+                break;
+        }
+        printf("f");
         if (output.char1 != '/'){
             output.ifchar = 0;
         }
@@ -365,4 +376,69 @@
         output.Ctrlpressed = 0;
         output.Altpressed = 0;
         return output;
+}
+
+void cin(char* output_address){
+    extern volatile unsigned int position;
+    u8 Oldkey = 0, key = 0;
+    struct output trans_key;
+    char full_input[4096];
+    full_input[0] = 0;
+    unsigned int input_pos = 0;
+    unsigned int prompt_pos = position;
+    override_str(full_input, 4096);
+    override_str(output_address, 4096);
+    while (1){
+        Oldkey = key;
+        key = get_key();
+        if (key == Oldkey || key == 0){
+            continue;
+        }
+        trans_key = transkey(key);
+        if (trans_key.char1 == '\r' || trans_key.char1 == '\t'){
+            if (trans_key.char1 == '\r' && !trans_key.released){
+                while (!trans_key.released){
+                    key = get_key();
+                    trans_key = transkey(key);
+                }
+                strcpy(full_input, output_address);
+                return;
+            }
+            else {
+                continue;
+            }
+        }
+        if (trans_key.char1 == '\x08' && !trans_key.released){
+            unsigned int len = length(full_input);
+            if (len == 0){
+                continue;
+            }
+            input_pos -= 1;
+            full_input[len-1] = '\0';
+            --position;
+            print_char(0, 0x0F, &position);
+            position = prompt_pos;
+            printf("%s", full_input, 0);
+            continue;
+        }
+        if (!trans_key.released && trans_key.char1 != 0 && !trans_key.extended){
+            *(full_input + input_pos) = trans_key.char1;
+            input_pos += 1;
+            position = prompt_pos;
+            *(full_input + input_pos) = 0;
+            printf("%s", full_input);
+            continue;
+        }
     }
+
+}
+
+struct arrow_info get_arrow_keys(){
+    u8 key = get_key();
+    struct output translated_key = transkey(key);
+    struct arrow_info ret; 
+    if (translated_key.extended){
+        if (translated_key.char1 == 'D' || translated_key.char1 == 'U' || translated_key.char1 == 'L' || translated_key.char1 == 'R') {ret.released = translated_key.released; ret.key = translated_key.char1;}
+    }
+    return ret;
+} 

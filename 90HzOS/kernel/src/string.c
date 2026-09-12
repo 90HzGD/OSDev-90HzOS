@@ -1,22 +1,22 @@
 #include "include/string.h" 
 #include "include/vga/stdio.h"
 #include "include/types.h"
+
     void reverse_string(char* string){
         char* string_cpy = 0;
         unsigned int str_len = length(string);
-        replace_string(string_cpy, string);
+        strcpy(string, string_cpy);
         for (unsigned int i = 0; i != str_len; ++i){
             *(string + i) = *(string_cpy + str_len - 1);
         }
     }
 
-    void replace_string(volatile char* string, volatile char* target){
-        unsigned int index=0;
-        do {
-            *(string+index) = *(target+index);
-            ++index;
-        }   while (*(target+index) != '\0');
-        *(string+index) = '\0';
+    void strcpy(volatile char* string, volatile char* target){
+        for (u8 i = 0; *(string + i) != 0; ++i){
+            *(target + i) = *(string + i);
+            *(target + i + 1) = 0;
+        }
+        return;
     }
     
     unsigned int length(volatile const char* string){

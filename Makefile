@@ -9,6 +9,7 @@ compile:
 	nasm -f elf ~/OSDev/90HzOS/kernel/src/drivers/ports/ports.asm -o ~/OSDev/90HzOS/kernel/bin/build/ports.o
 	nasm -f elf ~/OSDev/90HzOS/kernel/src/include/vga/local.asm -o ~/OSDev/90HzOS/kernel/bin/build/local_vga.o
 	nasm -f elf ~/OSDev/90HzOS/prog/src/shellUtil.asm -o ~/OSDev/90HzOS/prog/bin/build/shellUtil.o
+	nasm -f elf ~/OSDev/90HzOS/kernel/src/vga/VGAText.asm -o ~/OSDev/90HzOS/kernel/bin/build/VGAText.o
 	i386-elf-gcc $(CFLAGS) -ffreestanding -m32 -g -c ~/OSDev/90HzOS/kernel/src/kernel.c -o ~/OSDev/90HzOS/kernel/bin/build/kernel.o
 	i386-elf-gcc $(CFLAGS) -ffreestanding -m32 -g -c ~/OSDev/90HzOS/kernel/src/drivers/keyboard/ps2.c -o ~/OSDev/90HzOS/kernel/bin/build/ps2.o
 	i386-elf-gcc $(CFLAGS) -ffreestanding -m32 -g -c ~/OSDev/90HzOS/prog/src/shell.c -o ~/OSDev/90HzOS/prog/bin/build/shell.o
@@ -18,7 +19,7 @@ compile:
 	i386-elf-gcc $(CFLAGS) -ffreestanding -m32 -g -c ~/OSDev/90HzOS/kernel/src/drivers/keyboard/api/kb_tools.c -o ~/OSDev/90HzOS/kernel/bin/build/kb_tools.o
 	i386-elf-gcc $(CFLAGS) -ffreestanding -m32 -g -c ~/OSDev/90HzOS/kernel/src/drivers/PCI/PCI.c -o ~/OSDev/90HzOS/kernel/bin/build/PCI.o
 	i386-elf-gcc $(CFLAGS) -ffreestanding -m32 -g -c ~/OSDev/90HzOS/kernel/src/drivers/ATA/atapio.c -o ~/OSDev/90HzOS/kernel/bin/build/atapio.o
-	i386-elf-ld -T linker.ld -o ~/OSDev/90HzOS/kernel/bin/full/kernel.bin ~/OSDev/90HzOS/kernel/bin/build/entry.o ~/OSDev/90HzOS/kernel/bin/build/ports.o ~/OSDev/90HzOS/kernel/bin/build/atapio.o ~/OSDev/90HzOS/kernel/bin/build/local_vga.o ~/OSDev/90HzOS/prog/bin/build/shellUtil.o ~/OSDev/90HzOS/kernel/bin/build/kernel.o ~/OSDev/90HzOS/kernel/bin/build/kb_tools.o ~/OSDev/90HzOS/kernel/bin/build/PCI.o ~/OSDev/90HzOS/kernel/bin/build/ps2.o ~/OSDev/90HzOS/kernel/bin/build/string.o ~/OSDev/90HzOS/kernel/bin/build/vga/stdio.o ~/OSDev/90HzOS/kernel/bin/build/mem/mem_alloc.o ~/OSDev/90HzOS/prog/bin/build/shell.o --oformat binary -Map layout.map
+	i386-elf-ld -T linker.ld -o ~/OSDev/90HzOS/kernel/bin/full/kernel.bin ~/OSDev/90HzOS/kernel/bin/build/entry.o ~/OSDev/90HzOS/kernel/bin/build/VGAText.o ~/OSDev/90HzOS/kernel/bin/build/ports.o ~/OSDev/90HzOS/kernel/bin/build/atapio.o ~/OSDev/90HzOS/kernel/bin/build/local_vga.o ~/OSDev/90HzOS/prog/bin/build/shellUtil.o ~/OSDev/90HzOS/kernel/bin/build/kernel.o ~/OSDev/90HzOS/kernel/bin/build/kb_tools.o ~/OSDev/90HzOS/kernel/bin/build/PCI.o ~/OSDev/90HzOS/kernel/bin/build/ps2.o ~/OSDev/90HzOS/kernel/bin/build/string.o ~/OSDev/90HzOS/kernel/bin/build/vga/stdio.o ~/OSDev/90HzOS/kernel/bin/build/mem/mem_alloc.o ~/OSDev/90HzOS/prog/bin/build/shell.o --oformat binary -Map layout.map
 	rm -f ~/OSDev/90HzOS/OS/90HzOS.bin ~/OSDev/90HzOS/img/disk.img
 	touch ~/OSDev/90HzOS/img/disk.img ~/OSDev/90HzOS/OS/90HzOS.bin
 	dd if=/dev/zero of=$$HOME/OSDev/90HzOS/img/disk.img bs=512 count=100

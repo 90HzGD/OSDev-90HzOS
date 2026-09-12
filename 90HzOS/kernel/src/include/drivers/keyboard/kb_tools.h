@@ -9,5 +9,7 @@
     unsigned char shift_key(unsigned char target);
     void init_keys(void);
     struct output transkey(char key);
+    void cin(char* output_address);
+    struct arrow_info get_arrow_keys();
     
 #endif

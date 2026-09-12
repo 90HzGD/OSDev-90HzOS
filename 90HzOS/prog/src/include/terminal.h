@@ -3,7 +3,7 @@
 
     void next_entry(int clear);
 
-        unsigned char prompt(volatile unsigned int *position);
+        unsigned char prompt();
         void init_builtin_commands();
         char** clear();
         char** help();

@@ -9,7 +9,7 @@
 #include "include/drivers/ATA/atapio.h"
 
 struct avail_RAM initRAMstruct;
-int extended_key;
+char extended_key;
 
 enum Return_codes_main main(){
     unsigned int* main_ptr = (unsigned int*)&main;
@@ -43,12 +43,13 @@ enum Return_codes_main main(){
         free(test_malloc1);
     }
 
-    replace_string(string, "Initialized keyboard.\n");
+    strcpy("Initialized keyboard.\n", string);
     printf("\033\x07[\033\x0EPASS\033\x07]\033\x0F %s", string);
-    extern volatile unsigned int position;
 
-    print_string("Source code: github.com/90HzGD/Open-source-OSDev-90HzOS\n", 0x01, &position);
+    clear_screen();
+    printf("\033%cSource code: github.com/90HzGD/Open-source-OSDev-90HzOS\n\033\x0F", 0x01);
     next_entry(0);
+
     return _OK;
 }
 
@@ -58,7 +59,7 @@ unsigned char handle_kb(){
     if (!extended_key){
         unsigned char status = inb(KB_COMMAND);
         if (status & 1){
-            keycode = inb(KB_DATA);       // If status, scan kb
+            keycode = inb(KB_DATA);
         }
         if (keycode == 0xE0){
             extended_key = 1;
