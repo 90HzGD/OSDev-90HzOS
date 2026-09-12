@@ -44,6 +44,9 @@ kb_handler:
     pushad                  ; Save registers
     cld
     call handle_kb
+    cmp eax, 0xE0
+    je kb_handler_end
+
     mov [Scan_code], al
 
     cmp al, 0

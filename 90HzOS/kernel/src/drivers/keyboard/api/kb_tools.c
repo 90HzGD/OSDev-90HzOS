@@ -366,7 +366,6 @@
                 output.char1 = 0;
                 break;
         }
-        printf("f");
         if (output.char1 != '/'){
             output.ifchar = 0;
         }

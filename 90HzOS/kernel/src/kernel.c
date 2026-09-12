@@ -56,25 +56,27 @@ enum Return_codes_main main(){
 unsigned char handle_kb(){
     extern volatile unsigned char extended;
     unsigned char keycode = 0;
+    unsigned char status = inb(KB_COMMAND);
     if (!extended_key){
-        unsigned char status = inb(KB_COMMAND);
         if (status & 1){
             keycode = inb(KB_DATA);
         }
-        if (keycode == 0xE0){
-            extended_key = 1;
-            keycode = handle_kb();
-        }
+        if (keycode == 0xE0) {extended = 1; extended_key = 1;}
+        else extended = 0;
+        
         outb(PIC1_COMMAND, PIC_EOI);
         return keycode;
     }
     else {
-        keycode = inb(KB_DATA);
-        extended = 1;
         extended_key = 0;
+        if (status & 1){
+            keycode = inb(KB_DATA);
+        }
+        outb(PIC1_COMMAND, PIC_EOI);
         return keycode;
     }
 }
+
 
 enum Return_codes_main init_RAM(){
     enum Return_codes_main initRAMrcode = _OK;
