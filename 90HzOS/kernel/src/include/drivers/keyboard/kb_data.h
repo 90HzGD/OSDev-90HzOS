@@ -20,6 +20,7 @@
     struct arrow_info {
         unsigned char key;
         unsigned char released;
+        unsigned char enter;
     };
     
 #endif

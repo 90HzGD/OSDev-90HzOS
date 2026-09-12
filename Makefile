@@ -16,10 +16,11 @@ compile:
 	i386-elf-gcc $(CFLAGS) -ffreestanding -m32 -g -c ~/OSDev/90HzOS/kernel/src/vga/stdio.c -o ~/OSDev/90HzOS/kernel/bin/build/vga/stdio.o
 	i386-elf-gcc $(CFLAGS) -ffreestanding -m32 -g -c ~/OSDev/90HzOS/kernel/src/mem/mem_alloc.c -o ~/OSDev/90HzOS/kernel/bin/build/mem/mem_alloc.o
 	i386-elf-gcc $(CFLAGS) -ffreestanding -m32 -g -c ~/OSDev/90HzOS/kernel/src/string.c -o ~/OSDev/90HzOS/kernel/bin/build/string.o
+	i386-elf-gcc $(CFLAGS) -ffreestanding -m32 -g -c ~/OSDev/90HzOS/kernel/src/vga/menu.c -o ~/OSDev/90HzOS/kernel/bin/build/menu.o
 	i386-elf-gcc $(CFLAGS) -ffreestanding -m32 -g -c ~/OSDev/90HzOS/kernel/src/drivers/keyboard/api/kb_tools.c -o ~/OSDev/90HzOS/kernel/bin/build/kb_tools.o
 	i386-elf-gcc $(CFLAGS) -ffreestanding -m32 -g -c ~/OSDev/90HzOS/kernel/src/drivers/PCI/PCI.c -o ~/OSDev/90HzOS/kernel/bin/build/PCI.o
 	i386-elf-gcc $(CFLAGS) -ffreestanding -m32 -g -c ~/OSDev/90HzOS/kernel/src/drivers/ATA/atapio.c -o ~/OSDev/90HzOS/kernel/bin/build/atapio.o
-	i386-elf-ld -T linker.ld -o ~/OSDev/90HzOS/kernel/bin/full/kernel.bin ~/OSDev/90HzOS/kernel/bin/build/entry.o ~/OSDev/90HzOS/kernel/bin/build/VGAText.o ~/OSDev/90HzOS/kernel/bin/build/ports.o ~/OSDev/90HzOS/kernel/bin/build/atapio.o ~/OSDev/90HzOS/kernel/bin/build/local_vga.o ~/OSDev/90HzOS/prog/bin/build/shellUtil.o ~/OSDev/90HzOS/kernel/bin/build/kernel.o ~/OSDev/90HzOS/kernel/bin/build/kb_tools.o ~/OSDev/90HzOS/kernel/bin/build/PCI.o ~/OSDev/90HzOS/kernel/bin/build/ps2.o ~/OSDev/90HzOS/kernel/bin/build/string.o ~/OSDev/90HzOS/kernel/bin/build/vga/stdio.o ~/OSDev/90HzOS/kernel/bin/build/mem/mem_alloc.o ~/OSDev/90HzOS/prog/bin/build/shell.o --oformat binary -Map layout.map
+	i386-elf-ld -T linker.ld -o ~/OSDev/90HzOS/kernel/bin/full/kernel.bin ~/OSDev/90HzOS/kernel/bin/build/entry.o ~/OSDev/90HzOS/kernel/bin/build/menu.o ~/OSDev/90HzOS/kernel/bin/build/VGAText.o ~/OSDev/90HzOS/kernel/bin/build/ports.o ~/OSDev/90HzOS/kernel/bin/build/atapio.o ~/OSDev/90HzOS/kernel/bin/build/local_vga.o ~/OSDev/90HzOS/prog/bin/build/shellUtil.o ~/OSDev/90HzOS/kernel/bin/build/kernel.o ~/OSDev/90HzOS/kernel/bin/build/kb_tools.o ~/OSDev/90HzOS/kernel/bin/build/PCI.o ~/OSDev/90HzOS/kernel/bin/build/ps2.o ~/OSDev/90HzOS/kernel/bin/build/string.o ~/OSDev/90HzOS/kernel/bin/build/vga/stdio.o ~/OSDev/90HzOS/kernel/bin/build/mem/mem_alloc.o ~/OSDev/90HzOS/prog/bin/build/shell.o --oformat binary -Map layout.map
 	rm -f ~/OSDev/90HzOS/OS/90HzOS.bin ~/OSDev/90HzOS/img/disk.img
 	touch ~/OSDev/90HzOS/img/disk.img ~/OSDev/90HzOS/OS/90HzOS.bin
 	dd if=/dev/zero of=$$HOME/OSDev/90HzOS/img/disk.img bs=512 count=100
@@ -49,7 +50,3 @@ clear:
 	mkdir -p ~/OSDev/90HzOS/kernel/src ~/OSDev/90HzOS/kernel/bin ~/OSDev/90HzOS/OS ~/OSDev/90HzOS/img ~/OSDev/90HzOS/boot/bin ~/OSDev/90HzOS/boot/src ~/OSDev/90HzOS/kernel/bin/full ~/OSDev/90HzOS/kernel/bin/build ~/OSDev/90HzOS/prog/bin/build/ ~/OSDev/90HzOS/kernel/bin/build/vga ~/OSDev/90HzOS/kernel/bin/build/mem/
 	rm -rf ./90HzOS/boot/bin ./90HzOS/kernel/bin ./90HzOS/prog/bin ./90HzOS/img/* ./90HzOS/OS/* ./90HzOS/vdi
 	mkdir -p ~/OSDev/90HzOS/kernel/bin ~/OSDev/90HzOS/OS ~/OSDev/90HzOS/img ~/OSDev/90HzOS/boot/bin  ~/OSDev/90HzOS/kernel/bin/full ~/OSDev/90HzOS/kernel/bin/build ~/OSDev/90HzOS/prog/bin/build/ ~/OSDev/90HzOS/vdi/temp ~/OSDev/90HzOS/kernel/bin/build/vga ~/OSDev/90HzOS/kernel/bin/build/mem
-
-open_all_vscode:
-	code ~/OSDev/90HzOS/boot/src/* ~/OSDev/90HzOS/kernel/src/kernel.c ~/OSDev/90HzOS/kernel/src/entry.asm ~/OSDev/90HzOS/kernel/src/string.c ~/OSDev/90HzOS/kernel/src/vga/* ~/OSDev/90HzOS/kernel/src/drivers/keyboard/api* ~/OSDev/90HzOS/kernel/src/drivers/keyboard/ps2.c ~/OSDev/90HzOS/kernel/src/mem/* ~/OSDev/90HzOS/kernel/src/drivers/ports/* ~/OSDev/90HzOS/kernel/src/include/*.h ~/OSDev/90HzOS/kernel/src/include/drivers/ports/* ~/OSDev/90HzOS/kernel/src/include/drivers/keyboard/* ~/OSDev/90HzOS/kernel/src/include/mem/* ~/OSDev/90HzOS/kernel/src/include/vga/*
-	code ~/OSDev/90HzOS/prog/src/include/* ~/OSDev/90HzOS/prog/src/shell.c ~/OSDev/90HzOS/prog/src/shellUtil.asm

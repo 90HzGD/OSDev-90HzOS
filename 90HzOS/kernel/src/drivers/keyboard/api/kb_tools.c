@@ -339,7 +339,7 @@
     }
 
     struct output extended_char(unsigned char scan_code){
-        unsigned char released = (scan_code < 0x90);
+        unsigned char released = (scan_code > 0x90);
         struct output output;
         output.extended = 1;
         output.released = released;
@@ -435,9 +435,13 @@ void cin(char* output_address){
 struct arrow_info get_arrow_keys(){
     u8 key = get_key();
     struct output translated_key = transkey(key);
-    struct arrow_info ret; 
+    struct arrow_info ret;
+    ret.key = 0;
+    ret.released = 0;
     if (translated_key.extended){
         if (translated_key.char1 == 'D' || translated_key.char1 == 'U' || translated_key.char1 == 'L' || translated_key.char1 == 'R') {ret.released = translated_key.released; ret.key = translated_key.char1;}
     }
+    if (translated_key.char1 == '\r') ret.enter = 1;
+    else ret.enter = 0;
     return ret;
-} 
+}

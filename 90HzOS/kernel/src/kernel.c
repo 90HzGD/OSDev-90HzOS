@@ -7,6 +7,7 @@
 #include "include/string.h"
 #include "include/mem/mem_alloc.h"
 #include "include/drivers/ATA/atapio.h"
+#include "include/vga/menu.h"
 
 struct avail_RAM initRAMstruct;
 char extended_key;
@@ -48,6 +49,7 @@ enum Return_codes_main main(){
 
     clear_screen();
     printf("\033%cSource code: github.com/90HzGD/Open-source-OSDev-90HzOS\n\033\x0F", 0x01);
+
     next_entry(0);
 
     return _OK;
