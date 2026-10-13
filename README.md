@@ -42,11 +42,10 @@ This project **IS NOT PROFESSIONAL**
     - `[x] Runs on real hardware!`
     - `[x] PCI Device Enumeration`
     - `[x] ATA Device Enumeration (May not work on AHCI compatibility mode)`
+    - `[x] ATA Read / Write Driver`
 - **Working on**:
-    - `[_] ATA Read / Write Driver`
+    - `[_] Custom Filesystem`
 - **Planned:**
-    - `[ ] Read / Write ATA Driver`
-    - `[ ] Custom Filesystem`
     - `[ ] VESA BIOS Graphics mode (+custom font)`
     - `[ ] Custom image format`
     - `[ ] Read / Write AHCI Driver`
@@ -58,8 +57,8 @@ This project **IS NOT PROFESSIONAL**
     - 90HzOS while running
 - ![IDE PCI Device Enumeration](pictures/ata_enum.png)
     - IDE PCI Enumeration
-- ![OS shutted down](pictures/shutdown.png)
-    - 90HzOS while shut down via ^Q(Ctrl + Q)
+- ![ATA Write / Read](pictures/rwata.png)
+    - Read and write sector shell commands
 
 ## FEATURES
 - This OS features, for now, only really basic **Features**:
