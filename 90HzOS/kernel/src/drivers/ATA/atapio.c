@@ -70,6 +70,13 @@ u8* GetATA_PCI_Controller(){
     return (u8*)&Controllers;
 }
 
+void Get_ATA_PCILoc(u8 CtrollerID, u8* PCILoc){
+    u8* Controllers = GetATA_PCI_Controller();
+    *(PCILoc) = *(Controllers+(CtrollerID*3));
+    *(PCILoc+1) = *(Controllers+(CtrollerID*3)+1);
+    *(PCILoc+2) = *(Controllers+(CtrollerID*3)+2);
+}
+
 struct ATA_BARs Get_ATA_BARs(u8* BUS_ID, u8* DEV_ID, u8* FUNC_ID, u8 CtrllerID){
     u16 pci_command = (u16)read_PCI(*BUS_ID, *DEV_ID, *FUNC_ID, 0x04);
 
@@ -115,15 +122,15 @@ struct ATA_BARs Get_ATA_BARs(u8* BUS_ID, u8* DEV_ID, u8* FUNC_ID, u8 CtrllerID){
 struct ATA_BARs ATAPorts;
 u8* ATAControllers;
 
-u8 selected_drive = 9;  // Illegal value
+int selected_drive = -1;  // Illegal value
 
-unsigned char SelectDrive(u16 Control_ports, u16 alternate_status, u8 val, u8 CtrllerID){
+unsigned char SelectDrive(u16 Control_ports, u16 alternate_status, u8 val, u8 CtrllerID, u8 DiskID){
     u8 Old_selection = selected_drive;
     ATAControllers = GetATA_PCI_Controller();
     ATAPorts = Get_ATA_BARs(ATAControllers+CtrllerID*3, ATAControllers+CtrllerID*3+1, ATAControllers+CtrllerID*3+2, CtrllerID);
 
     outb((Control_ports + 6), val);
-    for (u8 i = 0; i != 15; ++i){           // ~400ns delay
+    for (u8 i = 0; i != 15; ++i){           // +400ns delay
         inb(alternate_status);
     }
     u8 output = inb(alternate_status);
@@ -141,12 +148,12 @@ unsigned char SelectDrive(u16 Control_ports, u16 alternate_status, u8 val, u8 Ct
             }
         }
     }
-    selected_drive = Old_selection;
+    selected_drive = DiskID;
     return 0x00;
 }
 
 char IdentifyATADrive(struct ATA_BARs ATARegs, u8 DriveIdx, char* Output){
-    u8 ret = 0;             // 0 == does not exist; 1 == ATA; 2 == Legacy mode SATA (AHCI = OFF); 3 = Other
+    u8 ret = 1;             // 0 == does not exist; 1 == ATA; 2 == Legacy mode SATA (AHCI = OFF); 3 = Other
     char poll_output = 1;
     char DriveID;
     u16 ComPort = ATARegs.BAR0;
@@ -168,7 +175,7 @@ char IdentifyATADrive(struct ATA_BARs ATARegs, u8 DriveIdx, char* Output){
     outb((ComPort+3), 0x00);
     outb((ComPort+4), 0x00);
     outb((ComPort+5), 0x00);
-    outb((ComPort+7), 0xEC);       // Identify Command
+    outb((ComPort+7), IDENTIFY_COMMAND);       // Identify Command
 
     for (u8 i = 0; i != 15; ++i){
         inb(CtrlPort);  // safe waiting
@@ -187,7 +194,6 @@ char IdentifyATADrive(struct ATA_BARs ATARegs, u8 DriveIdx, char* Output){
         }
         if (timeout == 0){
             *Output = 0; *(Output + 1) = 0;
-            printf("\nERR: Drive did not respond (BSY bit)\n");
             return 0;
         }
         u8 LBA_mid = inb(ComPort+4); u8 LBA_high = inb(ComPort+5);
@@ -201,7 +207,6 @@ char IdentifyATADrive(struct ATA_BARs ATARegs, u8 DriveIdx, char* Output){
             }
         }
         else if ((inb(ComPort+7) & 0x01)){
-            printf("ERR bit set");
             *Output = 0; *(Output + 1) = 0;
             return 0;
         }
@@ -216,7 +221,6 @@ char IdentifyATADrive(struct ATA_BARs ATARegs, u8 DriveIdx, char* Output){
 
             if (timeout == 0){
                 *Output = 0; *(Output + 1) = 0;
-                printf("\nERR: Drive did not respond (DRQ bit)\n");
                 return 0;
             }
 
@@ -228,10 +232,117 @@ char IdentifyATADrive(struct ATA_BARs ATARegs, u8 DriveIdx, char* Output){
                 *(Output + i*2 + 1) = (u8)word;
                 ++i;
             }
-            if (ret != 2){
-                ret = 1;
-            }
         }
     }
     return ret;
+}
+
+void read_sectors(u8 diskID, u32 LBA28, u8 sec_count, char* Output){
+    u8 disk_status;
+    struct ATA_BARs ATAreg;
+    u8 ControllerID = diskID/4;
+    diskID %= 4;
+    u8* PCILoc = {0};           // 0 in it for no GCC warn
+    Get_ATA_PCILoc(ControllerID, PCILoc);
+    ATAreg = Get_ATA_BARs(PCILoc, PCILoc+1, PCILoc+2, ControllerID);
+    u16 ComPort = ATAreg.BAR0;
+    u16 CtrlPort = ATAreg.BAR1;
+
+    if ((diskID >= 2 && diskID < 4)){
+        ComPort = ATAreg.BAR2;
+        CtrlPort = ATAreg.BAR3;
+    }
+
+    u8 drive = diskID%2;
+    if (selected_drive != diskID){
+        if (drive == 0) SelectDrive(ComPort, CtrlPort, 0xA0, ControllerID, diskID);
+        else SelectDrive(ComPort, CtrlPort, 0xB0, ControllerID, diskID);
+    }
+
+    {
+        u32 mode = 0;
+        mode = (0xE0 | (drive << 4) | ((LBA28 >> 24) & 0x0F));     // Set LBA mode 
+        outb(ComPort+6, mode);
+        outb(ComPort+2, sec_count);     // Max 256;
+        outb(ComPort+3, (u8)LBA28);
+        outb(ComPort+4, (u8)(LBA28 >> 8));
+        outb(ComPort+5, (u8)(LBA28 >> 16));
+        outb(ComPort+7, READ_COMMAND);
+    }
+
+    u32 timeout = 100000;
+    while (--timeout){
+        disk_status = inb(CtrlPort);
+        if (disk_status == 0xFF){ return;}
+        if (!(disk_status & 0x80) && disk_status & 0x08) { break; }   // BSY bit cleared
+    }
+    if (timeout == 0) return;
+    for (u8 i = 0; i < sec_count; ++i){ 
+        read_pio(ComPort, Output+512*i);
+    }
+}
+
+void write_sectors(u8 diskID, u32 LBA28, u8 sec_count, char* data){
+    u8 disk_status;
+    struct ATA_BARs ATAreg;
+    u8 ControllerID = diskID/4;
+    diskID %= 4;
+    u8* PCILoc = {0};           // 0 in it for no GCC warn
+    Get_ATA_PCILoc(ControllerID, PCILoc);
+    ATAreg = Get_ATA_BARs(PCILoc, PCILoc+1, PCILoc+2, ControllerID);
+    u16 ComPort = ATAreg.BAR0;
+    u16 CtrlPort = ATAreg.BAR1;
+
+    if ((diskID >= 2 && diskID < 4)){
+        ComPort = ATAreg.BAR2;
+        CtrlPort = ATAreg.BAR3;
+    }
+
+    u8 drive = diskID%2;
+    if (selected_drive != diskID){
+        if (drive == 0) SelectDrive(ComPort, CtrlPort, 0xA0, ControllerID, diskID);
+        else SelectDrive(ComPort, CtrlPort, 0xB0, ControllerID, diskID);
+    }
+
+    {
+        u32 mode = 0;
+        mode = (0xE0 | (drive << 4) | ((LBA28 >> 24) & 0x0F));     // Set LBA mode 
+        outb(ComPort+6, mode);
+        outb(ComPort+2, sec_count);     // Max 256;
+        outb(ComPort+3, (u8)LBA28);
+        outb(ComPort+4, (u8)(LBA28 >> 8));
+        outb(ComPort+5, (u8)(LBA28 >> 16));
+        outb(ComPort+7, WRITE_COMMAND);
+    }
+
+    u32 timeout = 100000;
+    while (--timeout){
+        disk_status = inb(CtrlPort);
+        if (disk_status == 0xFF){ return;}
+        if (!(disk_status & 0x80) && disk_status & 0x08) { break; }   // BSY bit cleared
+    }
+    if (timeout == 0) return;
+    for (u8 i = 0; i < sec_count; ++i){ 
+        write_pio(ComPort, data);
+    }
+}
+
+void read_pio(u16 ComPort, char* Output){
+    u16 i = 0;
+    u16 word = 0;
+    while (i < 256){
+        word = inw(ComPort);
+        *(Output + i*2) = (u8)word;
+        *(Output + i*2 + 1) = (u8)(word >> 8);
+        ++i;
+    }
+}
+
+void write_pio(u16 ComPort, char* data){
+    u16 word = 0;
+    for (int i = 0; i < 256; ++i) {
+        word = (u16)(data[i * 2] | (data[i * 2 + 1] << 8));
+        outw(ComPort, word);
+    }
+
 }

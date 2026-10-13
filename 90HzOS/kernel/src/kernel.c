@@ -8,6 +8,8 @@
 #include "include/mem/mem_alloc.h"
 #include "include/drivers/ATA/atapio.h"
 #include "include/vga/menu.h"
+#include "include/vga/tui.h"
+#include "include/math.h"
 
 struct avail_RAM initRAMstruct;
 char extended_key;
@@ -18,8 +20,7 @@ enum Return_codes_main main(){
 
     clear_screen();
 
-    char string[] = "In main C func in kernel:";
-    printf("\033\x07[\033\x0EPASS\033\x07]\033\x0F %s\033\x06 %p\033\x00\n", string, main_pointer);
+    printf("\033\x07[\033\x0EPASS\033\x07]\033\x0F In main C func in kernel:\033\x06 %p\033\x00\n", main_pointer);
 
     init_RAM();
     init_idt();
@@ -44,12 +45,11 @@ enum Return_codes_main main(){
         free(test_malloc1);
     }
 
-    strcpy("Initialized keyboard.\n", string);
-    printf("\033\x07[\033\x0EPASS\033\x07]\033\x0F %s", string);
+    printf("\033\x07[\033\x0EPASS\033\x07]\033\x0F Initialized keyboard.\n");
 
     clear_screen();
-    printf("\033%cSource code: github.com/90HzGD/Open-source-OSDev-90HzOS\n\033\x0F", 0x01);
 
+    printf("\033%cSource code: github.com/90HzGD/Open-source-OSDev-90HzOS\n\033\x0F", 0x01);
     next_entry(0);
 
     return _OK;
@@ -108,7 +108,6 @@ enum Return_codes_main init_RAM(){
         ++(baseptr);
         total_len += length;
     }
-
     for (unsigned int i = 0; i != *((unsigned int*)0x4000); ++i){
         printf("\t\033\6Chunk #%u : %p length: %u\tBytes\033\x0F\n", i, *(arrBaseptr + i), *(arrLenptr + i));
     }
@@ -116,7 +115,6 @@ enum Return_codes_main init_RAM(){
     printf("\033\x07[\033\x0EPASS\033\x07]\033\x0F Set up Usable RAM Segments\n");
 
     // Heap start
-
     initRAMstruct.heap_begin    = (unsigned int*)&kernel_end;
     initRAMstruct.total_RAM     = total_len - kernel_end;
     printf("Set Kernel Heap to: \033\x06%p\033\x0F\n", initRAMstruct.heap_begin);

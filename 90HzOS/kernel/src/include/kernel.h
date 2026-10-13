@@ -30,7 +30,8 @@
             _OK = 0,
         };
 
-    extern char kernel_end;
+    extern unsigned int kernel_end;
+    extern void update_stackptr(unsigned int base_address);
     #define HEAP_START (unsigned int*)&kernel_end
         
     void init_heap(unsigned int total_RAM);

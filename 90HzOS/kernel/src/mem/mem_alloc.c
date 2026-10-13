@@ -129,9 +129,6 @@ extern struct avail_RAM initRAMstruct;
             current_adr += *(current_adr)/4;
             ++current_adr;
         } while (current_adr != bloc - 2 && i < 0);
-        if (i <= 0){
-            printf("\n\033\4Freeing Memory chunk may did not finish correctly,\nyou may have memory corruption at this chunk location.\033\x0F");
-        }
         current_adr = old_adr+2;
         return current_adr;
     }

@@ -19,5 +19,6 @@
     void set_BGcolor(const char color);
     u8* get_VRAMpos();
     extern void update_cursor(u8 pos_low, u8 pos_high);
+    void outc(volatile const unsigned char displayed_char, const char attributes, unsigned int position);
 
 #endif

@@ -4,6 +4,8 @@ cross/
 *.img
 *.bin
 *.vdi
+tui*
+math*
 img/
 OS/
 vdi/

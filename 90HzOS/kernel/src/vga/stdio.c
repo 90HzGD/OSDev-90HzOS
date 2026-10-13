@@ -81,6 +81,12 @@
         }
     }
 
+    void outc(volatile const unsigned char displayed_char, const char attributes, unsigned int position){
+        *((unsigned char*)VRAM_CHAR_ADR+(position*2)) = displayed_char;
+        *((unsigned char*)VRAM_ATT_ADR+(position*2)) = attributes;
+        return;
+    }
+
     void print_string(volatile const char* string, const char attributes, volatile unsigned int* position){
         for (unsigned int i=0; *(string+i)!='\0'; ++i){
             print_char(*(string+i), attributes, position);
@@ -122,8 +128,6 @@
                 ++var_arg_ptr_ptr;
                 ++i;
                 const unsigned int* int_ptr = (unsigned int*)*(var_arg_ptr);
-                if (ifcolor == 1){
-                }
                 switch (*(string + i)){
                     case 'd':case 'i':
                         print_integer(*var_arg_ptr, &position);
@@ -134,6 +138,7 @@
                     case 'c':
                         if (ifcolor == 1){
                             Color = *var_arg_ptr;
+                            ifcolor = 0;
                             continue;
                         }
                         else if (ifcolor == 2) break;
@@ -416,6 +421,8 @@
             if (mode != 1){
                 *(ptr_string + hex_len) = 0;
             }
+            u8 single_digit = 0;
+            if (mode != 0 && hex_len == 0){ *(ptr_string) = '0'; single_digit = 1; }
             
             if (mode == 0){
                 for (unsigned int i = 0; i != (8-hex_len); ++i){
@@ -485,7 +492,8 @@
                     *(ptr_string + hex_len - i + offset - 1) = uptr_to_char;
                 }
                 else {
-                    *(ptr_string + hex_len - i) = uptr_to_char;
+                    if (!single_digit) *(ptr_string + hex_len - i) = uptr_to_char;
+                    else { *(ptr_string) = 48; *(ptr_string + 1) = uptr_to_char; break;}
                 }
             }
         }

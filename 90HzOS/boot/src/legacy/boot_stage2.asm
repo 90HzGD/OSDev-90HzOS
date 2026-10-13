@@ -164,7 +164,7 @@ RAMInfo_Buffer_End:
 DAP_kernel:
     .size:      db 0x10
     .reserved:  db 0x00
-    .sectors:   dw 0x30
+    .sectors:   dw 0x40
     .offset:    dw 0x8000
     .segment:   dw 0x0000
     .lba:       dq 2050
@@ -180,7 +180,7 @@ Protected_Mode:
     mov ss, ax
     mov gs, ax
     mov ds, ax
-    mov esp, 0x9FFFFF
+    mov esp, 0x9FFFF
     mov ebp, esp
 
     mov esi, Loading_string
@@ -189,7 +189,7 @@ Protected_Mode:
 
     mov ecx, 0
     mov eax, 0
-    mov byte [Sectors_load_nbr], 0x30
+    mov byte [Sectors_load_nbr], DAP_kernel.sectors
     call Multiply
     call Move_Kernel
 

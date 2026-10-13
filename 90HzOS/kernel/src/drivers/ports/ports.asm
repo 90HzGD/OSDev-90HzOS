@@ -153,8 +153,3 @@ outl:
     mov ax, [esp+8]        
     out dx, eax              
     ret
-
-; Stack:
-    ; 0: ret
-    ; 4: arg1
-    ; 8: arg2...

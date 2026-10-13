@@ -8,9 +8,10 @@
 #include "../../kernel/src/include/types.h"
 #include "../../kernel/src/include/drivers/PCI/PCI.h"
 #include "../../kernel/src/include/drivers/ATA/atapio.h"
+#include "../../kernel/src/include/math.h"
 
-char argument[2048];
 struct builtinCommands builtin_commands;
+u32** avail_args = 0;
 
 void next_entry(int clear){
     init_builtin_commands();
@@ -20,6 +21,9 @@ void next_entry(int clear){
         clear_screen();
     }
     unsigned char ret = 0;
+    // arg array init
+    avail_args = (unsigned int**)malloc(1024*64);
+    for (u16 i = 0; i != 512; ++i){ *(avail_args + i) = (unsigned int*)(avail_args + 1024/4 + (i*64)/4); }
     while (!ret){
         ret = prompt();
     }
@@ -69,11 +73,24 @@ void init_builtin_commands(){
     builtin_commands.arg_count_max[5]   = 0;
     builtin_commands.help[5]            = "Displays connected IDE Drives";
 
-    builtin_commands.commands[6]        = 0;
+    builtin_commands.commands[6]        = "rsector";
+    builtin_commands.builtin_adr[6]     = (unsigned int*)&read_sector;
+    builtin_commands.needs_args[6]      = 1;
+    builtin_commands.arg_count_min[6]   = 0;
+    builtin_commands.arg_count_max[6]   = 0;
+    builtin_commands.help[6]            = "reads sector on disk";
+
+    builtin_commands.commands[7]        = "wsector";
+    builtin_commands.builtin_adr[7]     = (unsigned int*)&write_sector;
+    builtin_commands.needs_args[7]      = 1;
+    builtin_commands.arg_count_min[7]   = 0;
+    builtin_commands.arg_count_max[7]   = 0;
+    builtin_commands.help[7]            = "writes sector on disk";
+
+    builtin_commands.commands[8]        = 0;
     return;
 }
 
-char* command_args[256];
 struct command Command;
 
 unsigned char prompt(){
@@ -93,6 +110,7 @@ unsigned char prompt(){
         }
         printf("Executed with rcode: \033\x03%u\033\x0F", Command.rcode);
     }
+    for (u16 i = 0; *(Command.arguments + i) != 0; ++i){ free((u32*)*(Command.arguments + i)); }
     return 0;
 }
 
@@ -103,7 +121,7 @@ struct command parse(char* full_command){
     Com.com_adr = 0x00;
     *(Com.arguments) = 0;
 
-    char command[256] = "";
+    char command[64] = "";
     unsigned int com_idx = 0;
     *(full_command + length(full_command)) = 0;
 
@@ -120,7 +138,6 @@ struct command parse(char* full_command){
         ++com_idx;
         unsigned int bypass_arg_parse = (com_idx >= length(full_command));
         strcpy(command, Com.command);
-        *argument = 0;
 
         if (!bypass_arg_parse){
             enum boolean allow_spaces = False;
@@ -142,7 +159,8 @@ struct command parse(char* full_command){
                 else {
                     *(arg + i) = 0;
                     i = 0;
-                    str_target = alloc_str(arg);
+                    str_target = malloc(64);
+                    strcpy(arg, str_target);
                     if (!str_target){
                         *arg = 0;
                         i = 0;
@@ -155,7 +173,8 @@ struct command parse(char* full_command){
                 }
             }
             *(arg+i) = 0;
-            str_target = alloc_str(arg);
+            str_target = malloc(64);
+            strcpy(arg, str_target);
             *(Com.arguments + args_idx) = str_target;
             ++args_idx;
             *(Com.arguments + args_idx) = 0;
@@ -213,7 +232,9 @@ char** help(){
     printf("Rcode \033\x03");
     printf("4\033\x0F: \033\x04Gave too much arguments to command\n\033\x0F");
     printf("Rcode \033\x03");
-    printf("5\033\x0F: \033\x04Invalid / Non-existing Argument\033\x0F");
+    printf("5\033\x0F: \033\x04Invalid / Non-existing Argument\033\x0F\n");
+    printf("Rcode \033\x03");
+    printf("6\033\x0F: \033\x04Invalid option given to command\033\x0F");
     return ret;
 }
 
@@ -227,65 +248,55 @@ char** echo(char** arguments){
     return ret;
 }
 
-char* avail_args[256];
 
 char** uname(char** arguments){
-    avail_args[0] = "-s";
-    avail_args[1] = "--kernel-name";
-    avail_args[2] = "-r";
-    avail_args[3] = "--kernel-release";
-    avail_args[4] = "-v";
-    avail_args[5] = "--kernel-version";
-    avail_args[6] = "-m";
-    avail_args[7] = "--machine";
-    avail_args[8] = "-o";
-    avail_args[9] = "--operating-system";
-    avail_args[10] = "-a";
-    avail_args[11] = "--all";
-    avail_args[12] = 0;
-    *ret = (char*)OK;
-    *(ret+1) = (char*)0;
+    strcpy("-s", (char*)*(avail_args));
+    strcpy("--kernel-name", (char*)*(avail_args+1));
+    strcpy("-r", (char*)*(avail_args+2));
+    strcpy("--kernel-release", (char*)*(avail_args+3));
+    strcpy("-v", (char*)*(avail_args+4));
+    strcpy("--kernel-version", (char*)*(avail_args+5));
+    strcpy("-m", (char*)*(avail_args+6));
+    strcpy("--machine", (char*)*(avail_args+7));
+    strcpy("-o", (char*)*(avail_args+8));
+    strcpy("--operating-system", (char*)*(avail_args+9));
+    strcpy("-a", (char*)*(avail_args+10));
+    strcpy("--all", (char*)*(avail_args+11));
+    strcpy("", (char*)*(avail_args+12));
     
-
-    if (*arguments != 0){
-        for (unsigned int i = 0; *(arguments + i) != 0; ++i){
-            if (!in_str_arr(avail_args, *(arguments + i))){
-                *ret = (char*)Unknown_Arg;
-                *(ret + 1) = "uname";
-                *(ret + 2) = *((arguments + i));
-                *(ret + 3) = 0;
-                return ret;
-            }
-        }
-    }
+    *ret = (char*)OK;
+    *(ret+1) = "uname";
+    u8 err = check_args(arguments, 0);
+    if (err) return ret;
     printf("\n");
 
-    if (compare_string(*arguments, *(avail_args)) || compare_string(*arguments, *(avail_args + 1))){
-        printf("%s", KRNL_NAME);
+    if (compare_string(*arguments, (char*)*(avail_args)) || compare_string(*arguments, (char*)*(avail_args + 1))){
+        printf(KRNL_NAME);
     }
-    else if (compare_string(*(arguments), *(avail_args + 2)) || compare_string(*arguments, *(avail_args + 3))){
-        printf("%s", KRNL_RELEASE);
+    else if (compare_string(*(arguments), (char*)*(avail_args + 2)) || compare_string(*arguments, (char*)*(avail_args + 3))){
+        printf(KRNL_RELEASE);
     }
-    else if (compare_string(*(arguments), *(avail_args + 4)) || compare_string(*arguments, *(avail_args + 5))){
+    else if (compare_string(*(arguments), (char*)*(avail_args + 4)) || compare_string(*arguments, (char*)*(avail_args + 5))){
         printf("Kernel Ver: %s", KRNL_VER);
     }
-    else if (compare_string(*(arguments), *(avail_args + 6)) || compare_string(*arguments, *(avail_args + 7))){
+    else if (compare_string(*(arguments), (char*)*(avail_args + 6)) || compare_string(*arguments, (char*)*(avail_args + 7))){
         printf("%s 32bit protected mode (i386+)", KRNL_ARCHITECTURE);
     }
-    else if (compare_string(*(arguments), *(avail_args + 8)) || compare_string(*arguments, *(avail_args + 9))){
+    else if (compare_string(*(arguments), (char*)*(avail_args + 8)) || compare_string(*arguments, (char*)*(avail_args + 9))){
         printf("%s", OS_NAME);
     }
-    else if (compare_string(*(arguments), *(avail_args + 10)) || compare_string(*arguments, *(avail_args + 11))){
+    else if (compare_string(*(arguments), (char*)*(avail_args + 10)) || compare_string(*arguments, (char*)*(avail_args + 11))){
         printf("%s Ver: %s %s 32bit i386+ protected mode", KRNL_NAME, KRNL_VER, KRNL_ARCHITECTURE);
     }
     else {
         printf("%s", KRNL_NAME);
     }
+    free_args();
     return ret;
 }
 
-
 char** lspci(){
+
     struct PCIVendors Vendors;
     fillVendors(Vendors.Vendors_str, (unsigned short*)&Vendors.VendorsID);
     *ret = (char*)OK;
@@ -319,7 +330,7 @@ char** lspci(){
                     printf("VENDOR: %s; ", *(Vendors.Vendors_str + knownVendor));
                 }
                 else {
-                    printf("VENDORID:%x; ", Device.VENDOR_ID);
+                    printf("VENDORID:%x\n", Device.VENDOR_ID);
                 }
                 printf("DEVICEID:%x\n", Device.DEVICE_ID);
                 if (Device.CLASS == 1){
@@ -332,7 +343,7 @@ char** lspci(){
                             printf("ATA/IDE");
                             break;
                         case 2:
-                            printf("Floppy Disk");
+                            printf("Floppy Drive");
                             break;
                         case 6:
                             printf("SATA/AHCI");
@@ -395,10 +406,10 @@ char** lside(){
             }
             u8 status;
             if (j < 2){
-                status = SelectDrive(REGS.BAR0, REGS.BAR1, Disk, i);
+                status = SelectDrive(REGS.BAR0, REGS.BAR1, Disk, i, i*j);
             }
             else{
-                status = SelectDrive(REGS.BAR2, REGS.BAR3, Disk, i);
+                status = SelectDrive(REGS.BAR2, REGS.BAR3, Disk, i, i*j);
             }
             if (status != 0){
                 continue;
@@ -458,8 +469,8 @@ char** lside(){
 
 }
 
-void com_err(struct command Com){
-    printf("\n\033\x07[\033\4FAIL\033\x07]\033\x0F ");
+void com_err(struct command Com){                   // stderr
+    printf("\n\033\x07[\033\4FAIL\033\x07] \033\x0F");
     switch (Com.rcode){
         case Unknown:
             printf("Illegal command: \033\x04%s\033\x0F\n", Com.command);
@@ -479,15 +490,192 @@ void com_err(struct command Com){
     return;
 }
 
-void exec_err(char** err){
+void exec_err(char** err){                                  // stderr
     printf("\n\033\x07[\033\4FAIL\033\x07]\033\x0F ");
     switch ((enum commands_rcode)*err){
+        case Missing_Arg:
+            printf("%s: \033\x04Too few arguments were given.\033\x0F\n", *(ret + 1));
+            Command.rcode = 3;
+            break;
+        case Too_Many_Arg:
+            printf("%s: \033\x04Too many arguments were given.\033\x0F\n", *(err + 1));
+            Command.rcode = 4;
+            break;
         case Unknown_Arg:
             printf("\033\x04%s\033\x0F: Unknown Argument: \033\x04%s\033\x0F\n", *(err + 1), *(err + 2));
             Command.rcode = 5;
+            break;
+        case Invalid_option:
+            printf("\033\x04%s\033\x0F: Invalid option: \033\x04%s\033\x0F\n", *(err + 1), *(err + 2));
+            Command.rcode = 6;
+            break;
+        case Missing_option:
+            printf("\033\x04%s\033\x0F: Missing option: \033\x04%s\033\x0F\n", *(err + 1), *(err + 2));
+            Command.rcode = 7;
             break;
         default:
             break;
     }
     return;
+}
+
+char** read_sector(char** arguments){
+    *ret = (char*)OK;
+    *(ret+1) = "rsector";
+    strcpy("-s", (char*)*(avail_args));
+    strcpy("--sector", (char*)*(avail_args+1));
+    strcpy("-D", (char*)*(avail_args+2));
+    strcpy("--disk", (char*)*(avail_args+3));
+    strcpy("--ascii", (char*)*(avail_args+4));
+    strcpy(0, (char*)*(avail_args+5));
+
+    // Argument & option check + init
+        u8 err = check_args(arguments, 1);
+        if (err) return ret;
+
+        char too_much = chk_arg_count(arguments, 3, 2);
+        if (too_much > 0){ *(ret) = (char*)Too_Many_Arg ; return ret; }
+        else if (too_much < 0) { *(ret) = (char*)Missing_Arg; return ret;}
+
+        char* sector = 0;
+        char* disk = 0;
+        u8 ascii = 0;
+        for (u8 i = 0; *(arguments + i) != 0; ++i){
+            if (i % 2 == 0 && **(arguments+i) != '-'){
+                *(ret) = (char*)Invalid_option;
+                *(ret + 2) = *(arguments+i);
+                return ret; 
+            }
+            else if (i % 2 != 0 && **(arguments+i) == '-'){
+                *(ret) = (char*)Invalid_option;
+                *(ret + 2) = *(arguments+i);
+                return ret; 
+            }
+            if (compare_string(*(arguments + i), "--sector") || compare_string(*(arguments + i), "-s")){ sector = *(arguments+i+1); continue; };
+            if (compare_string(*(arguments + i), "--disk") || compare_string(*(arguments + i), "-D")){ disk = *(arguments+i+1); continue; };
+            if (compare_string(*(arguments + i), "--ascii")) { ascii = 1; continue; }
+        }
+        u32 sector_int = char_to_int(sector, 10);
+        u32 disk_int = char_to_int(disk, 10);
+        
+        char* sector_data = malloc(512);
+        read_sectors(disk_int, sector_int, 1, sector_data);
+        printf("\n");
+        u8 byte = 0;
+        extern volatile unsigned int position;
+        for (u16 i = 0; i != 512; ++i){
+            byte = *(sector_data + i);
+            if (!ascii){
+                if (position % 80 == 78) printf("%h", byte);
+                else printf("%h ", byte);
+            }
+            else printf("%c", byte);
+        }
+        free((u32*)sector_data);
+
+    return ret;
+}
+
+char** write_sector(char** arguments){
+    *ret = (char*)OK;
+    *(ret+1) = "wsector";
+    strcpy("-s", (char*)*(avail_args));
+    strcpy("--sector", (char*)*(avail_args+1));
+    strcpy("-D", (char*)*(avail_args+2));
+    strcpy("--disk", (char*)*(avail_args+3));
+    strcpy("--ascii", (char*)*(avail_args+4));
+    strcpy("--int", (char*)*(avail_args+5));
+    strcpy("--hex", (char*)*(avail_args+6));
+    strcpy(0, (char*)*(avail_args+7));
+
+    // Argument & option check + init
+        u8 err = check_args(arguments, 1);
+        if (err) return ret;
+
+        char too_much = chk_arg_count(arguments, 0, 2);
+        if (too_much > 0){ *(ret) = (char*)Too_Many_Arg ; return ret; }
+        else if (too_much < 0) { *(ret) = (char*)Missing_Arg; return ret;}
+
+        char* sector = 0;
+        char* disk = 0;
+        for (u8 i = 0; i != 4; ++i){
+            if (i % 2 == 0 && **(arguments+i) != '-'){
+                *(ret) = (char*)Invalid_option;
+                *(ret + 2) = *(arguments+i);
+                return ret; 
+            }
+            else if (i % 2 != 0 && **(arguments+i) == '-'){
+                *(ret) = (char*)Invalid_option;
+                *(ret + 2) = *(arguments+i);
+                return ret; 
+            }
+            if (compare_string(*(arguments + i), "--sector") || compare_string(*(arguments + i), "-s")){ sector = *(arguments+i+1); continue; };
+            if (compare_string(*(arguments + i), "--disk") || compare_string(*(arguments + i), "-D")){ disk = *(arguments+i+1); continue; };
+        }
+        u32 sector_int = char_to_int(sector, 10);
+        u32 disk_int = char_to_int(disk, 10);
+        
+        char* sector_data = malloc(512);
+        override_str(sector_data, 512);
+        u8 base = 255;
+        u8 sector_idx = 0;
+        u8 byte = 0;
+        printf("\nWrite on Sector #%u, Disk #%u...", sector_int, disk_int);
+        for (u16 i = 0; *(arguments+4+i) != 0; ++i){
+            if (sector_idx == 512) break;
+            if (compare_string(*(arguments+4+i), "--hex")) { base = 16; continue; }
+            if (compare_string(*(arguments+4+i), "--int")) { base = 10; continue; }
+            if (compare_string(*(arguments+4+i), "--ascii")) { base = 255; continue; }
+
+            if (base == 255){
+                for (u16 j = 0; *(*(arguments+4+i)+j) != 0; ++j, ++sector_idx){
+                    if (sector_idx == 512) break;
+                    *(sector_data + sector_idx) = *(*(arguments+4+i)+j);
+                }
+                continue;
+            }
+            else {
+                byte = char_to_int(*(arguments+4+i), base);
+                if (byte > 255) continue;
+                *(sector_data + sector_idx) = byte;
+                ++sector_idx;
+                continue;
+            }
+        }
+        write_sectors(disk_int, sector_int, 1, sector_data);
+        free((u32*)sector_data);
+    return ret;
+} /* write_sectors(u8 diskID, u32 LBA28, u8 sec_count, char* data) */
+
+u8 check_args(char** arguments, u8 mode){
+    if (*arguments != 0){
+        for (unsigned int i = 0; *(arguments + i) != 0; ++i){
+            if (!in_str_arr((char**)avail_args, *(arguments + i))){
+                if (mode == 1 && **(arguments + i) != '-') continue;
+                *ret = (char*)Unknown_Arg;
+                *(ret + 2) = *((arguments + i));
+                *(ret + 3) = 0;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+void free_args(){
+    free((unsigned int*)avail_args);
+    avail_args = (unsigned int**)malloc(1024*64);
+    for (u16 i = 0; i != 512; ++i){ *(avail_args + i) = (unsigned int*)(avail_args + 1024/4 + (i*64)/4); }
+    return;
+}
+
+char chk_arg_count(char** arguments, char arg_max, char arg_min){
+    u8 args_found = 0;
+    for (u8 i = 0; **(avail_args+i) != 0; ++i){
+        if (**(arguments+i) == '-') ++args_found;
+    }
+    if (arg_max == 0 && args_found >= arg_min) {arg_min = 0; args_found = 0;}
+    if (args_found > arg_max) return 1;
+    else if (args_found < arg_min) return -1;
+    else return 0;
 }

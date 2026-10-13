@@ -3,6 +3,7 @@
 global _start
 global freeze
 global Get_CPU_name
+global update_stackptr
 extern main
 extern clear_screen
 
@@ -42,6 +43,13 @@ Get_CPU_name:
     ret
 
 CPUName_str: dq 0,0,0,0,0,0
+
+update_stackptr:
+    pushad
+    mov eax, [esp + 4]
+    mov ebp, eax
+    mov esp, eax
+    ret
 
 shutdown:
     call clear_screen
